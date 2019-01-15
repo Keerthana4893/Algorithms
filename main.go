@@ -19,6 +19,4 @@ func dependencyInjections() (Req_proc, Prop_proc) {
 	req_proc := NewReq_proc(db, reAlgo)
 	prop_proc := NewProp_proc(db, proAlgo)
 	return req_proc, prop_proc
-}
-
-//Although, I have written the code only for prop_req and Prop_matching here, yet i have initiated the req_proc too. 
+} 
