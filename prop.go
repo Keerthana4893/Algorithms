@@ -23,55 +23,55 @@ type Prop struct {
 	DB             *gorm.DB
 	MatchAlgorithm Prop_mat
 }
-func NewProp(db *gorm.DB, pAlgo Prop_mat) Prop {
+func NewProp(db *gorm.DB, proAlgo Prop_mat) Prop {
 	return Prop{
 		DB:             db,
-		MatchAlgorithm: pAlgo,
+		MatchAlgorithm: proAlgo,
 	}
 }
-func (plP Prop) GetMatchingReqs(p Prop_list) ([]Matched_req, error) {
+func (plP Prop) GetMatchingReqs(pro Prop_list) ([]Matched_req, error) {
 	var err error
 	var matchingReqs []Matched_req
 	var candidateReqs []Req
 	var rMargins ReqMargins
-	isValid := plP.validate(p)
+	isValid := plP.validate(pro)
 	if !isValid {
 		return matchingReqs, errors.Wrap(err, "--Prop couldn't validate")
 	}
-	err = plP.addToDB(p)
+	err = plP.addToDB(pro)
 	if err != nil {
 		return matchingReqs, errors.Wrap(err, "--Prop couldn't add to DB")
 	}
-	candidateReqs, rMargins, err = plP.getCandidateReqs(p)
+	candidateReqs, rMargins, err = plP.getCandidateReqs(pro)
 	if err != nil {
 		return matchingReqs, errors.Wrap(err "--Processor couldn't get Candidate Reqs")
 	}
-	matchingReqs = plP.MatchAlgorithm.Match(p, candidateReqs, rMargins)
+	matchingReqs = plP.MatchAlgorithm.Match(pro, candidateReqs, rMargins)
 	return matchingReqs, nil
 }
 
-func (plP Prop) validate(p Prop_list) bool {
-	if !validCoordinate(p.Latitude, p.Longitude) {
-		log.Printf("lat: %f or lon: %f", p.Latitude, p.Longitude)
+func (plP Prop) validate(pro Prop_list) bool {
+	if !validCoordinate(pro.Latitude, pro.Longitude) {
+		log.Printf("lat: %f or lon: %f", pro.Latitude, pro.Longitude)
 		return false
 	}
-	if !validPrice(p.Price) {
-		log.Printf("price val: %f", p.Price)
+	if !validPrice(pro.Price) {
+		log.Printf("price val: %f", pro.Price)
 		return false
 	}
-	if !validBedrooms(p.Bedrooms) {
-		log.Printf("bed val: %d", p.Bedrooms)
+	if !validBedrooms(pro.Bedrooms) {
+		log.Printf("bed val: %d", pro.Bedrooms)
 		return false
 	}
-	if !validBathrooms(p.Bathrooms) {
-		log.Printf("bath val: %d", p.Bathrooms)
+	if !validBathrooms(pro.Bathrooms) {
+		log.Printf("bath val: %d", pro.Bathrooms)
 		return false
 	}
 	return true
 }
 
-func (plP Prop) addToDB(p Prop_list) error {
-	newProp := NewProp(p.Latitude, p.Longitude, p.Price, p.Bedrooms, p.Bathrooms)
+func (plP Prop) addToDB(pro Prop_list) error {
+	newProp := NewProp(pro.Latitude, pro.Longitude, pro.Price, pro.Bedrooms, pro.Bathrooms)
 
 	err := plP.DB.Debug().Create(newProp).Error
 	if err != nil {
@@ -80,23 +80,23 @@ func (plP Prop) addToDB(p Prop_list) error {
 	}
 	return nil
 }
-func (plP Prop) getCandidateReqs(p Prop_list) ([]Req, ReqMargins, error) {
+func (plP Prop) getCandidateReqs(pro Prop_list) ([]Req, ReqMargins, error) {
 	req := []Req
 	dist := float32(10) 
 	// distance in miles
-	rMargins := plP.getReqMargins(p, distanceRange)
+	rMargins := plP.getReqMargins(pro, distanceRange)
 
 	queryString := plP.getQueryString()
 
 	err := plP.DB.Debug().
-		Raw(queryString, p.Latitude, p.Latitude, p.Longitude, EarthRadius,
+		Raw(queryString, pro.Latitude, pro.Latitude, pro.Longitude, EarthRadius,
 			rMargins.MinLat, rMargins.MaxLat, rMargins.MinLon, rMargins.MaxLon,
-			distanceRange, p.Price, rMargins.MinPrice, rMargins.MaxPrice, rMargins.MinPrice, rMargins.MaxPrice,
-			p.Bedrooms, rMargins.MinBeds, rMargins.MaxBeds, rMargins.MinBeds, rMargins.MaxBeds,
-			p.Bathrooms, rMargins.MinBaths, rMargins.MaxBaths, rMargins.MinBaths, rMargins.MaxBaths).
+			distanceRange, pro.Price, rMargins.MinPrice, rMargins.MaxPrice, rMargins.MinPrice, rMargins.MaxPrice,
+			pro.Bedrooms, rMargins.MinBeds, rMargins.MaxBeds, rMargins.MinBeds, rMargins.MaxBeds,
+			pro.Bathrooms, rMargins.MinBaths, rMargins.MaxBaths, rMargins.MinBaths, rMargins.MaxBaths).
 		Scan(&req).Error
 	if err != nil {
-		log.Printf("Processor error(property: %v, err: %v)", p, err)
+		log.Printf("Processor error(property: %v, err: %v)", pro, err)
 		return req, rMargins, errors.Wrap(err "--Processor error")
 	}
 
@@ -122,12 +122,12 @@ func (plP Prop) getQueryString() string {
 		price + bed + bath
 }
 
-func (plP Prop) getReqMargins(p Prop_list, dist float32) ReqMargins {
-	minLat, maxLat := GetMinMaxLat(p.Latitude, dist)
-	minLon, maxLon := GetMinMaxLon(p.Latitude, p.Longitude, dist)
-	minPrice, maxPrice := plP.getMinMaxPrice(p.Price)
-	minBeds, maxBeds := plP.getMinMaxBedrooms(p.Bedrooms)
-	minBaths, maxBaths := plP.getMinMaxBathrooms(p.Bathrooms)
+func (plP Prop) getReqMargins(pro Prop_list, dist float32) ReqMargins {
+	minLat, maxLat := GetMinMaxLat(pro.Latitude, dist)
+	minLon, maxLon := GetMinMaxLon(pro.Latitude, pro.Longitude, dist)
+	minPrice, maxPrice := plP.getMinMaxPrice(pro.Price)
+	minBeds, maxBeds := plP.getMinMaxBedrooms(pro.Bedrooms)
+	minBaths, maxBaths := plP.getMinMaxBathrooms(pro.Bathrooms)
 
 	return NewReqMargins(minLat, maxLat, minLon, maxLon, minPrice, maxPrice, minBeds, maxBeds, minBaths, maxBaths)
 }
