@@ -14,7 +14,7 @@ type Prop struct {
 }
 
 func NewProp(lat, lon, price float32, bedrooms, bathrooms int16)*Prop {
-	p := Prop{
+	pro := Prop{
 		Latitude:  lat,
 		Longitude: lon,
 		Price:     price,
@@ -23,7 +23,7 @@ func NewProp(lat, lon, price float32, bedrooms, bathrooms int16)*Prop {
 		AddedDate: time.Now(),
 		//we can also use time.NOw().UTC() to get the UTC time. Although, in UNIX() it always returns the number of secs elapsed and hence both time.NOw() and time.Now().UTC() is the same.
 	}
-	return &p
+	return &pro
 }
 
 type Req struct {
@@ -40,7 +40,7 @@ type Req struct {
 }
 
 func NewReq(lat, lon, minBudget, maxBudget float32, minBedrooms, maxBedrooms, minBathrooms, maxBathrooms int16)*Req {
-	r := Req{
+	re := Req{
 		Latitude:     lat,
 		Longitude:    lon,
 		MinBudget:    minBudget,
@@ -51,7 +51,7 @@ func NewReq(lat, lon, minBudget, maxBudget float32, minBedrooms, maxBedrooms, mi
 		MaxBathrooms: maxBathrooms,
 		AddedDate:    time.Now(),
 	}
-	return &r
+	return &re
 }
 
 /* To find the nearest, the sql query should be (
