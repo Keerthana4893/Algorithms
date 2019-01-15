@@ -1,94 +1,90 @@
 package main
 
-type MatchedRequirement struct {
-	Requirement
-	MatchScore float32
+type Matched_req struct {
+	Req
+	Match_score float32
 }
 
-func NewMatchedRequirement(r Requirement, score float32) MatchedRequirement {
-	return MatchedRequirement{
-		Requirement: r,
-		MatchScore:  score,
+func NewMatched_req(re Req, score float32) Matched_req {
+	return Matched_req{
+		Req: re,
+		Match_score:  score,
 	}
 }
 
-type PropMatchingAlgo interface {
-	Match(PropListing, []ReqWithDistance, ReqMargins) []MatchedRequirement
+type Prop_m interface {
+	Match(Prop_list, []Req, ReqMargins) []Matched_req
 }
 
-type PropMatchAlgoV1 struct{}
+type Prop_m1 struct{}
 
-func NewPropMatchingAlgo() PropMatchAlgoV1 {
-	return PropMatchAlgoV1{}
+func NewProp_m_algo() Prop_m1_algo {
+	return Prop_m1_algo{}
 }
 
-func (a PropMatchAlgoV1) Match(p PropListing, requirements []ReqWithDistance, rMargins ReqMargins) []MatchedRequirement {
-	matchedReqs := []MatchedRequirement{}
+func (ar Prop_m1_algo) Match(pro Prop_list, requirements []Req, rMargins ReqMargins) []Matched_req {
+	matchedReqs := []Matched_req{}
 	scoring := make(chan bool)
 	defer close(scoring)
 
-	scores := a.createReqScores(requirements)
+	scores := ar.createReqScores(req)
 
-	// Run the 4 mathching tasks in goroutines to run them concurrently
-	go a.distanceMatching(p.Latitude, p.Longitude, scores, scoring)
-	go a.budgetMatching(p.Price, requirements, scores, rMargins, scoring)
-	go a.bedroomsMatching(p.Bedrooms, requirements, scores, rMargins, scoring)
-	go a.bathroomsMatching(p.Bathrooms, requirements, scores, rMargins, scoring)
-
-	// read from scoring channel, and wait and finish as soon as 4 of the goroutines finishes
+	
+	go ar.distanceMatching(pro.Latitude, pro.Longitude, scores, scoring)
+	go ar.budgetMatching(pro.Price, requirements, scores, rMargins, scoring)
+	go ar.bedroomsMatching(pro.Bedrooms, requirements, scores, rMargins, scoring)
+	go ar.bathroomsMatching(pro.Bathrooms, requirements, scores, rMargins, scoring)
+//The above is the go routines for budget,bathroom, bedroom and distance matching...
+	
 	for i := 0; i < 4; i++ {
 		<-scoring
 	}
-
-	// Score have been added, now final step, sort them
 	SortScores(scores)
 
 	for i, _ := range scores {
 		if scores[i].Total < 40.0 {
 			continue
 		}
-		matchedReqs = append(matchedReqs, NewMatchedRequirement(requirements[scores[i].Index].Requirement, scores[i].Total))
+		matchedReqs = append(matchedReqs, NewMatched_req(req[scores[i].Index].Req, scores[i].Total))
 	}
 	return matchedReqs
 }
 
-func (a PropMatchAlgoV1) createReqScores(r []ReqWithDistance) []Score {
-	scores := make([]Score, len(r))
-	for i, _ := range r {
-		scores[i] = NewScore(i, r[i].Distance)
+func (ar Prop_m1_algo) createReqScores(re []Req) []Score {
+	scores := make([]Score, len(re))
+	for i, _ := range re {
+		scores[i] = NewScore(i, re[i].Dist)
 	}
 	return scores
 }
 
-func (a PropMatchAlgoV1) distanceMatching(lat, lon float32, scores []Score, scoring chan bool) {
-	// base distance and maxDistance in miles
-	baseDistance := float32(2)
-	maxDistance := float32(10)
+func (ar Prop_m1_algo) dist_matching(lat, lon float32, scores []Score, scoring chan bool) {
+	base_dist := float32(2)
+	max_dist := float32(10)
 
 	for i, _ := range scores {
-		scores[i].DistanceScore = GetDistanceScore(scores[i].Distance, baseDistance, maxDistance)
+		scores[i].Dist_sc= GetDist_sc(scores[i].Dist, base_dist, max_dist)
 	}
 	scoring <- true
 }
 
-func (a PropMatchAlgoV1) budgetMatching(price float32, r []ReqWithDistance, scores []Score, rMargins ReqMargins, scoring chan bool) {
+func (ar Prop_m1_algo) budgetMatching(price float32, re []Req, scores []Score, rMargins ReqMargins, scoring chan bool) {
 	for i, _ := range scores {
-		scores[i].BudgetScore = GetBudgetScore(r[i].MinBudget, r[i].MaxBudget, price, rMargins.MinPrice, rMargins.MaxPrice)
+		scores[i].BudgetScore = GetBudgetScore(re[i].MinBudget, re[i].MaxBudget, price, rMargins.MinPrice, rMargins.MaxPrice)
 	}
 	scoring <- true
 }
 
-func (a PropMatchAlgoV1) bedroomsMatching(bedrooms uint16, r []ReqWithDistance, scores []Score, rMargins ReqMargins, scoring chan bool) {
+func (ar Prop_m1_algo) bedroomsMatching(bedrooms int16, re []Req, scores []Score, rMargins ReqMargins, scoring chan bool) {
 	for i, _ := range scores {
-		scores[i].BedroomScore = GetBedroomScore(r[i].MinBedrooms, r[i].MaxBedrooms, bedrooms, rMargins.MinBeds, rMargins.MaxBeds)
+		scores[i].BedroomScore = GetBedroomScore(re[i].MinBedrooms, re[i].MaxBedrooms, bedrooms, rMargins.MinBeds, rMargins.MaxBeds)
 	}
 	scoring <- true
 }
 
-func (a PropMatchAlgoV1) bathroomsMatching(bathrooms uint16, r []ReqWithDistance, scores []Score, rMargins ReqMargins, scoring chan bool) {
+func (ar Prop_m1_algo) bathroomsMatching(bathrooms int16, re []Req, scores []Score, rMargins ReqMargins, scoring chan bool) {
 	for i, _ := range scores {
-		// since algor for bathrooms matching is similar to batrhooms matching, using the same GetBedroomScore function
-		scores[i].BathroomScore = GetBedroomScore(r[i].MinBathrooms, r[i].MaxBathrooms, bathrooms, rMargins.MinBaths, rMargins.MaxBaths)
+scores[i].BathroomScore = GetBathroomScore(re[i].MinBathrooms, re[i].MaxBathrooms, bathrooms, rMargins.MinBaths, rMargins.MaxBaths)
 	}
 	scoring <- true
 }
