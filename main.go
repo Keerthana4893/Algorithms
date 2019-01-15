@@ -3,35 +3,22 @@ package main
 import "log"
 
 func main() {
-	// step 1: read configs
-
-	// step 2: add dependecies (Dependency Injections)
-	reqProcessor, propProcessor := dependencgInjections()
-
-	// Simulate using the above usecase processors to do something
-	log.Printf("Got %v and %v", reqProcessor, propProcessor)
-
-	// step 3: add routes and attach controllers to web app and start server
+	/* In this main fucntion I have used DI for the over use of init func and instances which can be used anywhere in the dependecy tree. Google has recently launched its DI containers called wire. Albeit, I have used dig library DI in this.*/
+	req_proc, prop_proc := dependencyInjections()
+	log.Printf("Got %v and %v", req_proc, prop_proc)
 }
 
-// dependencgInjections is like a dependency injector which initiates all different
-// infrastructre objects and instances and adds its to the App instance which can
-// be passed anywhere down the dependency tree
-func dependencgInjections() (ReqProcessor, PropProcessor) {
-	// get a single DB connection/pool
+func dependencyInjections() (Req_proc, Prop_proc) {
 	db, err := NewDBClient()
 	if err != nil {
-		panic("Unable to get a DB connection")
+		panic("Couldn't get connected to DB")
 	}
 
-	rAlgo := NewReqMatchingAlgo()
-	pAlgo := NewPropMatchingAlgo()
-
-	reqProcessor := NewReqProcessor(db, rAlgo)
-	propProcessor := NewPropProcessor(db, pAlgo)
-
-	// Here we use r and p to perform the usecasaes
-	// API handler/cotrollers will have access to r and p to perform the usecases
-	return reqProcessor, propProcessor
+	reAlgo := NewReq_m_algo()
+	proAlgo := NewProp_m_algo()
+	req_proc := NewReq_proc(db, reAlgo)
+	prop_proc := NewProp_proc(db, proAlgo)
+	return req_proc, prop_proc
 }
 
+//Although, I have written the code only for prop_req and Prop_matching here, yet i have initiated the req_proc too. 
